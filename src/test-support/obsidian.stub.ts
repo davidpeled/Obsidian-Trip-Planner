@@ -3,6 +3,8 @@
  * with the behavior it relies on. UI classes need a DOM (use `// @vitest-environment happy-dom` and import
  * `./obsidian-dom`). `FakeObsidianApp` builds on these.
  */
+import "./obsidian-dom"; // Obsidian's global createEl/createDiv, used below
+
 export class App {}
 
 export class TAbstractFile {
@@ -34,11 +36,11 @@ export function normalizePath(path: string): string {
 
 /** Trailing-edge debounce, as Obsidian's (`resetTimer` restarts the wait on every call). */
 export function debounce<A extends unknown[]>(fn: (...args: A) => void, timeout = 0, resetTimer = false): (...args: A) => void {
-  let timer: ReturnType<typeof setTimeout> | null = null;
+  let timer: number | null = null;
   return (...args: A) => {
     if (timer !== null && !resetTimer) return;
-    if (timer !== null) clearTimeout(timer);
-    timer = setTimeout(() => {
+    if (timer !== null) window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
       timer = null;
       fn(...args);
     }, timeout);
@@ -74,7 +76,7 @@ export class WorkspaceLeaf {
 
 export class ItemView {
   app: App;
-  contentEl: HTMLElement = document.createElement("div");
+  contentEl: HTMLElement = createDiv();
   navigation = true;
   /** Event refs and cleanups the view registered, so tests can see what it subscribed to. */
   registered: unknown[] = [];
@@ -93,7 +95,7 @@ export class ItemView {
 export class Modal {
   /** Every modal that is currently open, newest last. */
   static open: Modal[] = [];
-  contentEl: HTMLElement = document.createElement("div");
+  contentEl: HTMLElement = createDiv();
   title = "";
   constructor(public app: App) {}
   open(): void {
@@ -114,7 +116,7 @@ export class Modal {
 }
 
 class TextComponent {
-  inputEl = document.createElement("input");
+  inputEl = createEl("input");
   constructor(containerEl: HTMLElement) {
     containerEl.appendChild(this.inputEl);
   }
@@ -134,7 +136,7 @@ class TextComponent {
 }
 
 class ToggleComponent {
-  toggleEl = document.createElement("div");
+  toggleEl = createDiv();
   value = false;
   private callback: (value: boolean) => unknown = () => undefined;
   constructor(containerEl: HTMLElement) {
@@ -157,7 +159,7 @@ class ToggleComponent {
 }
 
 class ButtonComponent {
-  buttonEl = document.createElement("button");
+  buttonEl = createEl("button");
   constructor(containerEl: HTMLElement) {
     containerEl.appendChild(this.buttonEl);
   }
@@ -176,16 +178,16 @@ class ButtonComponent {
 }
 
 export class Setting {
-  settingEl = document.createElement("div");
-  nameEl = document.createElement("div");
-  descEl = document.createElement("div");
-  controlEl = document.createElement("div");
+  settingEl = createDiv();
+  nameEl = createDiv();
+  descEl = createDiv();
+  controlEl = createDiv();
   constructor(containerEl: HTMLElement) {
     this.settingEl.className = "setting-item";
     this.nameEl.className = "setting-item-name";
     this.descEl.className = "setting-item-description";
     this.controlEl.className = "setting-item-control";
-    const info = document.createElement("div");
+    const info = createDiv();
     info.append(this.nameEl, this.descEl);
     this.settingEl.append(info, this.controlEl);
     containerEl.appendChild(this.settingEl);
@@ -217,7 +219,7 @@ export class Setting {
 }
 
 export class PluginSettingTab {
-  containerEl: HTMLElement = document.createElement("div");
+  containerEl: HTMLElement = createDiv();
   constructor(
     public app: App,
     public plugin: Plugin
@@ -258,7 +260,7 @@ export class Plugin {
   }
   addRibbonIcon(icon: string, title: string, callback: () => unknown): HTMLElement {
     this.ribbonIcons.push({ icon, title, callback });
-    return document.createElement("div");
+    return createDiv();
   }
   addCommand(command: { id: string; name: string; callback?: () => unknown }): void {
     this.commands.push(command);

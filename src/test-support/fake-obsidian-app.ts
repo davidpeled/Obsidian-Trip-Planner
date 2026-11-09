@@ -66,13 +66,13 @@ export class FakeObsidianApp {
     },
     createFolder: (path: string): Promise<TFolder> => {
       if (this.entries.has(path)) return Promise.reject(new Error("Folder already exists."));
-      return Promise.resolve(this.add(new TFolder(path)) as TFolder);
+      return Promise.resolve(this.add(new TFolder(path)));
     },
     create: (path: string, content: string): Promise<TFile> => {
       if (this.entries.has(path)) return Promise.reject(new Error("File already exists."));
       const file = new TFile(path);
       file.content = content;
-      return Promise.resolve(this.add(file) as TFile);
+      return Promise.resolve(this.add(file));
     },
   };
 
@@ -120,7 +120,7 @@ export class FakeObsidianApp {
     return parent;
   }
 
-  private add(entry: TAbstractFile): TAbstractFile {
+  private add<T extends TAbstractFile>(entry: T): T {
     this.parentOf(entry.path).children.push(entry);
     this.entries.set(entry.path, entry);
     return entry;
