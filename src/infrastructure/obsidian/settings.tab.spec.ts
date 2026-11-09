@@ -31,6 +31,15 @@ async function show(saved: Record<string, unknown> | null = null) {
   };
 }
 
+/** The definitions as the tests read them: every one of ours is a plain control with a name and description. */
+interface Def {
+  name: string;
+  desc: string;
+  aliases?: string[];
+  control: { type: string; key: string; placeholder?: string };
+}
+const definitions = (tab: TripSettingTab) => tab.getSettingDefinitions() as unknown as Def[];
+
 describe("TripSettingTab", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -91,6 +100,59 @@ describe("TripSettingTab", () => {
     click(s.toggle());
     await flush();
     expect(s.settings.get().openOverviewAfterCreate).toBe(true);
+  });
+
+  describe("for Obsidian 1.13+ (declarative settings and settings search)", () => {
+    it("defines the same two settings display() draws, with the same wording", async () => {
+      const s = await show();
+      const defs = definitions(s.tab);
+      const drawn = [...s.c.querySelectorAll(".setting-item")].map((row) => [
+        row.querySelector(".setting-item-name")?.textContent,
+        row.querySelector(".setting-item-description")?.textContent,
+      ]);
+      expect(defs.map((d) => [d.name, d.desc])).toEqual(drawn);
+    });
+
+    it("uses a folder picker for the location and a toggle for the overview", async () => {
+      const [location, overview] = definitions((await show()).tab);
+      expect(location.control).toEqual({ type: "folder", key: "defaultLocation", placeholder: "Trips" });
+      expect(overview.control).toEqual({ type: "toggle", key: "openOverviewAfterCreate" });
+    });
+
+    it("gives each setting search terms beyond its name", async () => {
+      const defs = definitions((await show()).tab);
+      expect(defs.every((d) => (d.aliases ?? []).length > 0)).toBe(true);
+    });
+
+    it("reads the current values", async () => {
+      const s = await show({ defaultLocation: "Areas/Trips", openOverviewAfterCreate: false });
+      expect(s.tab.getControlValue("defaultLocation")).toBe("Areas/Trips");
+      expect(s.tab.getControlValue("openOverviewAfterCreate")).toBe(false);
+      expect(s.tab.getControlValue("somethingElse")).toBeUndefined();
+    });
+
+    it("saves what Obsidian sets, tidying the location", async () => {
+      const s = await show();
+      await s.tab.setControlValue("defaultLocation", " /Areas//Travel/ ");
+      await s.tab.setControlValue("openOverviewAfterCreate", false);
+      expect(s.settings.get()).toEqual({ defaultLocation: "Areas/Travel", openOverviewAfterCreate: false });
+      expect(s.repository.saved).toEqual({ defaultLocation: "Areas/Travel", openOverviewAfterCreate: false });
+    });
+
+    it("ignores values of the wrong type and keys it doesn't have", async () => {
+      const s = await show();
+      await s.tab.setControlValue("defaultLocation", 5);
+      await s.tab.setControlValue("openOverviewAfterCreate", "yes");
+      await s.tab.setControlValue("nonsense", "x");
+      expect(s.settings.get()).toEqual({ defaultLocation: "Trips", openOverviewAfterCreate: true });
+      expect(s.repository.saved).toBeNull(); // nothing was saved
+    });
+
+    it("every key it defines is a real setting", async () => {
+      const s = await show();
+      const keys = definitions(s.tab).map((d) => d.control.key);
+      expect(keys.sort()).toEqual(Object.keys(s.settings.get()).sort());
+    });
   });
 
   it("draws fresh each time it is shown, not on top of itself", async () => {

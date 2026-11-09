@@ -224,11 +224,11 @@ describe("NewTripModal", () => {
 
   it("explains what's wrong and stays open", async () => {
     const m = await open();
-    expect(m.error().style.display).toBe("none"); // hidden until there's something to say
+    expect(m.error().hidden).toBe(true); // hidden until there's something to say
     click(m.create());
     await flush();
     expect(text(m.error())).toBe("Give the trip a name.");
-    expect(m.error().style.display).not.toBe("none");
+    expect(m.error().hidden).toBe(false);
     expect(Modal.open).toContain(m.modal);
     expect(m.vault.paths()).toEqual([]);
   });

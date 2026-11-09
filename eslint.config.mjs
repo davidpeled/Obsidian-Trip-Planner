@@ -65,11 +65,16 @@ export default defineConfig([
     rules: { "no-restricted-imports": "off" },
   },
 
-  // Obsidian rules that don't fit this plugin.
+  // The Obsidian review scan lints the test helpers too, though the preset skips `test-support/`. Hold them to the
+  // same rules here so nothing surprises us at review time. (`*.spec.ts` files stay exempt, as in the preset.)
   {
+    files: ["src/test-support/**/*.ts"],
+    ignores: ["**/*.spec.ts"],
     rules: {
-      // The declarative settings API needs Obsidian 1.13; minAppVersion is 1.7.2.
-      "obsidianmd/settings-tab/prefer-setting-definitions": "off",
+      "obsidianmd/no-static-styles-assignment": "error",
+      "obsidianmd/prefer-create-el": "warn",
+      "obsidianmd/prefer-window-timers": "warn",
+      "obsidianmd/no-tfile-tfolder-cast": "warn",
     },
   },
 
