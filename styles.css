@@ -1,0 +1,392 @@
+/*
+ * Trip Planner. Obsidian's own variables throughout, so every theme works.
+ * Details follow Emil Kowalski's UI notes: hairlines are semi-transparent
+ * shadows rather than solid borders, pressable things scale on :active,
+ * transitions name their properties and use ease-out, numbers are tabular.
+ * Nothing animates on entry: the dashboard is opened often and re-renders on edits.
+ */
+.trip-planner {
+  --trip-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --trip-hairline: color-mix(in srgb, var(--text-normal) 11%, transparent);
+  --trip-hairline-strong: color-mix(in srgb, var(--text-normal) 20%, transparent);
+  --trip-tint: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+  padding: var(--size-4-6) var(--size-4-8);
+  max-width: 1100px;
+  margin: 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Header */
+.trip-planner-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--size-4-4);
+  margin-bottom: var(--size-4-6);
+}
+
+.trip-planner-header h2 {
+  margin: 0;
+  font-size: 1.6em;
+  letter-spacing: -0.02em;
+}
+
+.trip-planner-subtitle {
+  margin-top: var(--size-2-1);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+/* Sections */
+.trip-planner-section + .trip-planner-section {
+  margin-top: var(--size-4-8);
+}
+
+.trip-planner-section h3 {
+  margin: 0 0 var(--size-4-3);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.trip-planner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: var(--size-4-4);
+  align-items: start;
+}
+
+/* Cards */
+.trip-planner-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+  padding: var(--size-4-5);
+  background: var(--background-primary-alt, var(--background-secondary));
+  border-radius: var(--radius-l);
+  box-shadow: 0 0 0 1px var(--trip-hairline);
+}
+
+.trip-planner-card.is-current {
+  background: linear-gradient(180deg, var(--trip-tint), transparent 70%), var(--background-primary-alt, var(--background-secondary));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 55%, transparent);
+}
+
+.trip-planner-card.is-past .trip-planner-trip-name,
+.trip-planner-card.is-past .trip-planner-dates {
+  color: var(--text-muted);
+}
+
+.trip-planner-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+}
+
+.trip-planner-badge {
+  flex-shrink: 0;
+  padding: var(--size-2-1) var(--size-4-2);
+  border-radius: var(--radius-xl, 999px);
+  background: color-mix(in srgb, var(--text-normal) 8%, transparent);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-medium);
+  white-space: nowrap;
+}
+
+.is-current .trip-planner-badge {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.trip-planner-dates {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+/* Progress through a current trip */
+.trip-planner-progress {
+  height: 4px;
+  margin-top: var(--size-2-1);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--text-normal) 10%, transparent);
+  overflow: hidden;
+}
+
+.trip-planner-progress-fill {
+  width: var(--trip-progress, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--interactive-accent);
+}
+
+/* Buttons that behave like links. Reset Obsidian's raised-button look first. */
+.trip-planner-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-3);
+  height: auto;
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-normal);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 160ms var(--trip-ease-out);
+}
+
+.trip-planner-link:active {
+  transform: scale(0.97);
+}
+
+.trip-planner-trip-name {
+  min-width: 0;
+  padding: 0;
+  color: var(--text-normal);
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
+  letter-spacing: -0.02em;
+  line-height: var(--line-height-tight);
+}
+
+.trip-planner-trip-name:hover {
+  color: var(--text-accent);
+}
+
+/* Quick-link chips */
+.trip-planner-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2-3);
+  margin-top: var(--size-2-2);
+}
+
+.trip-planner-chip {
+  padding: var(--size-2-2) var(--size-4-2);
+  border-radius: var(--radius-m);
+  box-shadow: 0 0 0 1px var(--trip-hairline);
+  font-size: var(--font-ui-small);
+}
+
+.trip-planner-icon {
+  display: inline-flex;
+  color: var(--text-muted);
+}
+
+.trip-planner-icon svg {
+  width: var(--icon-s);
+  height: var(--icon-s);
+}
+
+/* The schedule */
+.trip-planner-days {
+  margin-top: var(--size-2-2);
+  padding-top: var(--size-4-2);
+  border-top: 1px solid var(--trip-hairline);
+}
+
+.trip-planner-days summary {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+}
+
+.trip-planner-days summary:hover {
+  color: var(--text-normal);
+}
+
+.trip-planner-day-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: var(--size-2-2);
+  margin-top: var(--size-4-2);
+}
+
+.trip-planner-day {
+  padding: var(--size-2-2) var(--size-4-2);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-small);
+}
+
+.trip-planner-day-number {
+  min-width: 1.4em;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.trip-planner-day.is-today {
+  background: var(--trip-tint);
+  color: var(--text-accent);
+  font-weight: var(--font-medium);
+}
+
+.trip-planner-day.is-today .trip-planner-day-number {
+  color: inherit;
+}
+
+/* "New trip" */
+.trip-planner-new {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-3);
+  flex-shrink: 0;
+  transition: transform 160ms var(--trip-ease-out);
+}
+
+.trip-planner-new:active {
+  transform: scale(0.97);
+}
+
+.trip-planner-new .trip-planner-icon {
+  color: inherit;
+}
+
+/* Empty state */
+.trip-planner-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 380px;
+  margin: var(--size-4-12) auto 0;
+  text-align: center;
+}
+
+.trip-planner-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--size-4-3);
+  border-radius: 50%;
+  background: var(--trip-tint);
+  color: var(--text-accent);
+}
+
+.trip-planner-empty-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.trip-planner-empty h3 {
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.trip-planner-empty p {
+  margin: var(--size-4-2) 0 var(--size-4-4);
+  color: var(--text-muted);
+  text-wrap: balance;
+}
+
+/* Hover only where there is a pointer to hover with (not tap-and-stick on touch). */
+@media (hover: hover) {
+  .trip-planner-link:hover {
+    background: var(--background-modifier-hover);
+  }
+
+  .trip-planner-chip:hover {
+    box-shadow: 0 0 0 1px var(--trip-hairline-strong);
+  }
+
+  .trip-planner-trip-name:hover {
+    background: transparent;
+  }
+}
+
+/* Narrow panes and phones */
+@media (max-width: 560px) {
+  .trip-planner {
+    padding: var(--size-4-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trip-planner-link,
+  .trip-planner-new {
+    transition-property: background-color, color;
+  }
+}
+
+/* New-trip form */
+.trip-planner-error {
+  margin-bottom: var(--size-4-2);
+}
+
+/* Delete: quiet until you aim at the card, always visible where there is no hover. */
+.trip-planner-card-end {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--size-2-2);
+}
+
+.trip-planner-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease,
+    transform 160ms var(--trip-ease-out);
+}
+
+.trip-planner-delete svg {
+  width: var(--icon-s);
+  height: var(--icon-s);
+}
+
+.trip-planner-delete:active {
+  transform: scale(0.95);
+}
+
+.trip-planner-delete:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .trip-planner-delete {
+    opacity: 0;
+  }
+
+  .trip-planner-card:hover .trip-planner-delete {
+    opacity: 1;
+  }
+
+  .trip-planner-delete:hover {
+    background: color-mix(in srgb, var(--text-error) 14%, transparent);
+    color: var(--text-error);
+  }
+}
+
+/* The delete warning: red, but through the theme's error color so it fits dark and light. */
+.trip-planner-warning {
+  margin-bottom: var(--size-4-3);
+  padding: var(--size-4-3) var(--size-4-4);
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--text-error) 10%, transparent);
+  box-shadow: inset 3px 0 0 var(--text-error);
+  color: var(--text-normal);
+}
+
+.trip-planner-warning strong {
+  color: var(--text-error);
+  word-break: break-word;
+}
+
+.trip-planner-warning p {
+  margin: var(--size-2-2) 0 0;
+}
