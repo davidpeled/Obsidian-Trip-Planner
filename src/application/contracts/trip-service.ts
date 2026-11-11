@@ -4,6 +4,8 @@ export type CreateTripResult = { ok: true; overviewPath: string } | { ok: false;
 
 export type DeleteTripResult = { ok: true } | { ok: false; error: string };
 
+export type AddAgentGuideResult = { ok: true; path: string } | { ok: false; error: string };
+
 export interface TripService {
   /** Every trip in the vault, wherever its folder is, sorted by start date. */
   list(): Promise<Trip[]>;
@@ -18,4 +20,6 @@ export interface TripService {
   fileCount(folder: string): Promise<number>;
   /** Move a trip's whole folder to the trash. Refuses any folder that isn't exactly one trip's own (`Trip.ownsFolder`). */
   delete(folder: string): Promise<DeleteTripResult>;
+  /** Write `AGENTS.md` into a trip's own folder (for trips made before the plugin wrote one). Never overwrites; refuses a folder that isn't exactly one trip's own. */
+  addAgentGuide(folder: string): Promise<AddAgentGuideResult>;
 }

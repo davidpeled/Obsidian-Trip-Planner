@@ -1,4 +1,4 @@
-import { NOTE_TYPES, SECTIONS, type PlannedNote, type TripSection, type TripDraft, type TripPlan } from "../contracts/trip";
+import { NOTE_TYPES, SECTIONS, type PlannedNote, type Trip, type TripSection, type TripDraft, type TripPlan } from "../contracts/trip";
 import { type IsoDate, daysBetween, eachDay, formatDay, formatRange, parseIsoDate, weekday } from "./dates";
 
 export const OVERVIEW_FILE = "Overview.md";
@@ -7,6 +7,7 @@ export const TRANSPORTATION_FILE = "Transportation.md";
 export const ATTRACTIONS_FILE = "Attractions.md";
 export const SCHEDULE_FOLDER = "Schedule";
 export const INDEX_FILE = "Index.md";
+export const AGENTS_FILE = "AGENTS.md";
 export const MAX_TRIP_DAYS = 366;
 
 /** Characters Obsidian or the file system won't take in a file name, or that break links. */
@@ -168,6 +169,72 @@ const SECTION_DEFS: Record<TripSection, SectionDef> = {
   },
 };
 
+/** Where a trip's section note lives inside the trip's folder. */
+const sectionPathIn = (folder: string, s: TripSection): string => {
+  const own = SECTION_DEFS[s].folder;
+  return own ? joinPath(folder, own, INDEX_FILE) : joinPath(folder, `${s[0].toUpperCase()}${s.slice(1)}.md`);
+};
+
+/**
+ * Instructions for an AI agent working in the trip folder: how to fill each note, and the rules about
+ * files it must not open without being told to. Plain markdown with no `type` frontmatter, so the trip
+ * scanner never mistakes it for a trip note.
+ */
+const agentsNote = (name: string, start: IsoDate, end: IsoDate, dayCount: number, folder: string): string => {
+  const sectionPath = (s: TripSection): string => sectionPathIn(folder, s);
+  const rel = (s: TripSection): string => sectionPath(s).slice(folder.length + 1);
+  const documentsFolder = `${SECTION_DEFS.documents.folder}/`;
+  const documentsIndex = rel("documents");
+  return [
+    `# Agent guide · ${name}`,
+    "",
+    `This folder is the trip "${name}" (${formatRange(start, end)}, ${plural(dayCount, "day")}). It was created by the Trip Planner Obsidian plugin. Read this file first, then fill in the notes below.`,
+    "",
+    "## Guardrails (read before anything else)",
+    "",
+    "- Work only inside this folder. Do not read or edit anything outside it.",
+    "- **Do not open PDFs, images, scans or other attachments** (tickets, boarding passes, passports, visas, insurance policies, booking confirmations), here or elsewhere, unless the user has explicitly allowed it in this conversation for that specific file. A file name is not permission.",
+    `- Treat every file in \`${documentsFolder}\` except \`${INDEX_FILE}\` as sensitive: passport and visa numbers, policy numbers, payment details. Do not read it, copy its contents into other notes, or send it to any external tool or service without explicit permission. You may fill in \`${documentsIndex}\` itself (which papers exist, who issued them, when they expire), but not with ID, passport or policy numbers unless the user gives you the number for that purpose.`,
+    "- Never read or copy credentials, `.env` files, password exports, API keys or anything from outside the vault.",
+    "- Do not invent details. Booking references, flight numbers, times, prices and phone numbers come from the user or from a source they give you. Leave a cell empty, or write `TODO`, when you don't know.",
+    "- Do not delete, rename or move notes or folders. Add to what is there. Keep the frontmatter (`type`, `trip`, `date`, `day`) and the `[[links]]` as they are: the plugin uses them to find the trip.",
+    "- If a task seems to need a file you aren't allowed to open, ask the user to paste the details or to grant access for that one file.",
+    "",
+    "## Where things go",
+    "",
+    "| Note | What to fill in |",
+    "| --- | --- |",
+    `| \`${OVERVIEW_FILE}\` | Emergency and embassy numbers, the "Before you go" checklist. Tick items as they are done. |`,
+    `| \`${rel("flights")}\` | One row per flight in the Outbound and Return tables. |`,
+    `| \`${rel("hotels")}\` | One row per stay: address, check-in and check-out, phone, booking ref, price. |`,
+    `| \`${rel("transportation")}\` | Trains, buses, transfers, passes and rentals. |`,
+    `| \`${rel("attractions")}\` | Places to see, opening hours, ticket needs, the day planned. |`,
+    `| \`${rel("tickets")}\` | One row per ticket: what, day, file name, booked or not. List the file name only. |`,
+    `| \`${rel("packing")}\` | Checklist items. Add or remove lines freely. |`,
+    `| \`${documentsIndex}\` | Which papers exist and when they expire. No ID or policy numbers unless the user asks. |`,
+    `| \`${SCHEDULE_FOLDER}/<date> <weekday>.md\` | Morning, afternoon, evening, bookings and notes for that day. |`,
+    "",
+    "## Conventions",
+    "",
+    "- Dates are `YYYY-MM-DD`; times are 24-hour local time.",
+    "- Keep the tables' columns. Add rows rather than changing headers.",
+    `- Link between notes with full-path wiki links, for example \`[[${sectionPath("flights").replace(/\.md$/, "")}|Flights]]\`.`,
+    "- When you are unsure which note something belongs in, put it under that day's Notes and tell the user.",
+    "",
+  ].join("\n");
+};
+
+/** Just the agent guide, for a trip made before the plugin wrote one. `trip.folder` is the trip's own folder. */
+export function planAgentGuide(trip: Pick<Trip, "name" | "folder" | "start" | "end" | "days">): TripPlan {
+  const overviewPath = joinPath(trip.folder, OVERVIEW_FILE);
+  return {
+    folder: trip.folder,
+    overviewPath,
+    folders: [],
+    notes: [{ path: joinPath(trip.folder, AGENTS_FILE), content: agentsNote(trip.name, trip.start, trip.end, trip.days.length, trip.folder) }],
+  };
+}
+
 /**
  * The folders and notes for a new trip, as pure data:
  *
@@ -177,6 +244,7 @@ const SECTION_DEFS: Record<TripSection, SectionDef> = {
  *   <location>/<name>/Attractions.md
  *   <location>/<name>/{Hotels,Tickets,Packing,Documents}/Index.md
  *   <location>/<name>/Schedule/<date> <weekday>.md     (one per day)
+ *   <location>/<name>/AGENTS.md                        guide and guardrails for AI agents
  *
  * The draft must pass `validateDraft`.
  */
@@ -191,10 +259,7 @@ export function planTrip(draft: TripDraft): TripPlan {
   const overviewPath = joinPath(folder, OVERVIEW_FILE);
   const scheduleFolder = joinPath(folder, SCHEDULE_FOLDER);
   const dayPaths = dates.map((d) => joinPath(scheduleFolder, dayFileName(d)));
-  const sectionPath = (s: TripSection): string => {
-    const own = SECTION_DEFS[s].folder;
-    return own ? joinPath(folder, own, INDEX_FILE) : joinPath(folder, `${s[0].toUpperCase()}${s.slice(1)}.md`);
-  };
+  const sectionPath = (s: TripSection): string => sectionPathIn(folder, s);
   const sectionDef = (s: TripSection): SectionDef => SECTION_DEFS[s];
 
   const trip = { trip: name };
@@ -264,6 +329,7 @@ export function planTrip(draft: TripDraft): TripPlan {
         ].join("\n"),
       };
     }),
+    { path: joinPath(folder, AGENTS_FILE), content: agentsNote(name, start, end, dates.length, folder) },
   ];
   // Parents first, so a location that doesn't exist yet is created level by level.
   const parents = normalizeLocation(draft.location).split("/").filter(Boolean).map((_, i, all) => all.slice(0, i + 1).join("/"));

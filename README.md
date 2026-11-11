@@ -29,11 +29,21 @@ Areas/Trips/
     Tickets/Index.md     tickets and confirmations, plus a list of them
     Packing/Index.md     a starter packing checklist
     Documents/Index.md   passports, visas and insurance (provider, policy number, emergency line)
+    AGENTS.md            guide for AI agents: what to fill in where, and guardrails (see below)
     Schedule/
       2026-04-01 Wed.md  one note per day, with previous/next day links
       2026-04-02 Thu.md
       ...
 ```
+
+`AGENTS.md` tells an AI agent (Claude Code, Codex and other tools that read it) how to fill each note, and sets guardrails: stay inside the trip folder, don't open PDFs, images or other attachments, don't read the files in `Documents/` (the `Index.md` there is fine to fill in, without ID or policy numbers) or copy sensitive numbers, and don't invent details, unless you explicitly allow it. The file has no `type` property, so the plugin ignores it.
+
+Two limits to know:
+
+- **It only helps if the agent reads it.** The file sits in the trip's folder, so start your agent in that folder (or tell it to read `AGENTS.md` first). An agent started at the vault root may never see it, and tools differ in whether they pick up a nested `AGENTS.md`.
+- **It is a request, not access control.** For a hard guarantee, also set deny rules in your agent's permission settings, for example deny reading `**/*.pdf` and `**/Documents/**`.
+
+Trips created before this feature have no `AGENTS.md`. Hover the trip's card and click the robot icon to add one; it never overwrites an existing file, and only works on trips that own their folder (the same rule as delete).
 
 The **Trips** page lists every trip in the vault, wherever its folder is: *Happening now*, *Upcoming* and *Past*, each with its dates, a countdown ("Day 3 of 10", "Starts in 12 days") and quick links to today's note and every section (flights, hotels, transportation, attractions, tickets, packing, documents) and every day; the trip title opens its overview. Ctrl/Cmd-click or middle-click a link to open it in a new tab.
 

@@ -19,6 +19,7 @@
 - **Refresh** is event-driven (metadata cache, a note of ours changing anywhere, create/delete/rename inside a shown trip or the default location, returning to the view), debounced.
 
 - **Folders get an index note.** Hotels, Tickets, Packing and Documents are folders (they collect files: confirmations, PDFs) and each starts with `Index.md`, so the folder exists and isn't empty (empty folders don't survive sync or git). Sections are data (`SECTIONS`, `FOLDER_SECTIONS`, `FLAT_SECTIONS`), so adding one means one entry plus its icon and label.
+- **Every trip gets an `AGENTS.md`**: a guide for AI agents (what to fill in where) with guardrails (stay in the folder, don't open attachments, treat `Documents/` as sensitive, don't invent details). It has no `type` frontmatter on purpose, so the scanner, `ownsFolder` and the dashboard ignore it; it still counts in the delete file count. The guardrails are instructions, not enforcement, and only reach an agent that loads the file (it lives in the trip folder). `planAgentGuide` builds the same file for older trips and `TripService.addAgentGuide` writes it through the normal all-or-nothing `write`, never over an existing file and only for a folder the trip owns.
 - **Emergency and embassy numbers live in the overview**, as a table to fill in, so they are one tap from the trip's main note.
 
 ## Testing

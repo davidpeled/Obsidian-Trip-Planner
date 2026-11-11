@@ -1,7 +1,7 @@
 import type { Clock, TripVaultRepository } from "../../domain/interfaces/ports";
 import { TRIP_NOTE_TYPES } from "../../domain/contracts/trip";
 import { discoverTrips } from "../../domain/model/trip-discovery";
-import { planTrip, tripFolder, validateDraft, validateLocation, cleanTripName } from "../../domain/model/trip-scaffold";
+import { AGENTS_FILE, joinPath, planAgentGuide, planTrip, tripFolder, validateDraft, validateLocation, cleanTripName } from "../../domain/model/trip-scaffold";
 import type { TripService } from "../contracts/trip-service";
 
 export function createTripService(deps: { vault: TripVaultRepository; clock: Clock }): TripService {
@@ -41,6 +41,22 @@ export function createTripService(deps: { vault: TripVaultRepository; clock: Clo
           return { ok: false, error: `Couldn't create the trip: ${e instanceof Error ? e.message : String(e)}` };
         }
         return { ok: true, overviewPath: plan.overviewPath };
+      }),
+
+    addAgentGuide: (folder) =>
+      serialized(async () => {
+        const trip = (await list()).find((t) => t.folder === folder);
+        if (!trip) return { ok: false, error: "That folder isn't a trip any more." };
+        if (!trip.ownsFolder) return { ok: false, error: `${trip.name} shares its folder with other notes or trips, so an agent guide can't be added here.` };
+        const plan = planAgentGuide(trip);
+        const path = joinPath(folder, AGENTS_FILE);
+        if (await vault.exists(path)) return { ok: false, error: `${trip.name} already has an ${AGENTS_FILE}.` };
+        try {
+          await vault.write(plan);
+        } catch (e) {
+          return { ok: false, error: `Couldn't add the agent guide: ${e instanceof Error ? e.message : String(e)}` };
+        }
+        return { ok: true, path };
       }),
 
     fileCount: (folder) => vault.countFiles(folder),

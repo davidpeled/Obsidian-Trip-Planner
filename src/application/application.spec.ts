@@ -45,7 +45,7 @@ describe("creating trips", () => {
   it("writes the structure and opens the overview", async () => {
     const { controller, vault, workspace } = await setup();
     expect(await controller.create(japan)).toEqual({ ok: true, overviewPath: "Trips/Japan 2026/Overview.md" });
-    expect(vault.paths()).toHaveLength(11);
+    expect(vault.paths()).toHaveLength(12);
     expect(workspace.opened).toEqual([{ path: "Trips/Japan 2026/Overview.md", newTab: false }]);
   });
 
@@ -60,7 +60,7 @@ describe("creating trips", () => {
     const result = await controller.create({ ...japan, name: "UK-trip", location: "Areas/Trips" });
     expect(result).toEqual({ ok: true, overviewPath: "Areas/Trips/UK-trip/Overview.md" });
     expect(vault.paths().every((p) => p.startsWith("Areas/Trips/UK-trip/"))).toBe(true);
-    expect(vault.paths()).toHaveLength(11);
+    expect(vault.paths()).toHaveLength(12);
   });
 
   it("offers the default location, and previews the folder", async () => {
@@ -87,6 +87,41 @@ describe("creating trips", () => {
   });
 });
 
+describe("adding an agent guide", () => {
+  const olderTrip = (vault: InMemoryTripVaultRepository) => {
+    vault.addNote("Trips/Japan 2026/Overview.md", "---\ntype: trip\nname: Japan 2026\nstart: 2026-04-01\nend: 2026-04-03\n---\n");
+    vault.addNote("Trips/Japan 2026/Schedule/2026-04-01 Wed.md", "---\ntype: trip-day\ntrip: Japan 2026\ndate: 2026-04-01\n---\n");
+  };
+
+  it("writes AGENTS.md into a trip that has none, without touching its notes, and opens it", async () => {
+    const { controller, vault, workspace } = await setup();
+    olderTrip(vault);
+    const before = vault.paths();
+
+    expect(await controller.addAgentGuide("Trips/Japan 2026")).toEqual({ ok: true, path: "Trips/Japan 2026/AGENTS.md" });
+
+    expect(vault.paths()).toEqual([...before, "Trips/Japan 2026/AGENTS.md"].sort());
+    expect(workspace.opened.map((o) => o.path)).toEqual(["Trips/Japan 2026/AGENTS.md"]);
+  });
+
+  it("never overwrites an existing guide, whatever the letter case", async () => {
+    const { controller, vault } = await setup();
+    olderTrip(vault);
+    vault.addNote("Trips/Japan 2026/agents.md", "mine");
+    const result = await controller.addAgentGuide("Trips/Japan 2026");
+    expect(result).toMatchObject({ ok: false });
+    expect(vault.paths()).not.toContain("Trips/Japan 2026/AGENTS.md");
+  });
+
+  it("refuses a folder that isn't exactly one trip's own", async () => {
+    const { controller, vault } = await setup();
+    vault.addNote("Trips/Rome.md", "---\ntype: trip\nname: Rome\nstart: 2026-07-01\nend: 2026-07-02\n---\n");
+    expect(await controller.addAgentGuide("Trips")).toMatchObject({ ok: false });
+    expect(await controller.addAgentGuide("Nowhere")).toMatchObject({ ok: false });
+    expect(vault.paths()).toEqual(["Trips/Rome.md"]);
+  });
+});
+
 describe("deleting trips", () => {
   it("removes the trip's folder and nothing else", async () => {
     const { controller, vault } = await setup();
@@ -99,7 +134,7 @@ describe("deleting trips", () => {
 
     expect(vault.paths().some((p) => p.startsWith("Trips/Japan 2026/"))).toBe(false);
     expect(vault.paths()).toContain("Trips/Notes.md");
-    expect(vault.paths().filter((p) => p.startsWith("Trips/Rome/"))).toHaveLength(11);
+    expect(vault.paths().filter((p) => p.startsWith("Trips/Rome/"))).toHaveLength(12);
     const names = (await controller.dashboard()).sections.flatMap((s) => s.trips.map((t) => t.name));
     expect(names).toEqual(["Rome"]);
   });
@@ -120,7 +155,7 @@ describe("deleting trips", () => {
       expect(result.ok, folder).toBe(false);
     }
     expect(vault.paths()).toContain("Areas/Health/plan.md");
-    expect(vault.paths()).toHaveLength(12);
+    expect(vault.paths()).toHaveLength(13);
   });
 
   describe("shared and nested folders", () => {
@@ -209,9 +244,9 @@ describe("deleting trips", () => {
   it("counts the files that would go, so the confirmation can say so", async () => {
     const { controller, vault } = await setup();
     await controller.create(japan);
-    expect(await controller.fileCount("Trips/Japan 2026")).toBe(11);
-    vault.addNote("Trips/Japan 2026/Documents/passport.md", "x");
     expect(await controller.fileCount("Trips/Japan 2026")).toBe(12);
+    vault.addNote("Trips/Japan 2026/Documents/passport.md", "x");
+    expect(await controller.fileCount("Trips/Japan 2026")).toBe(13);
   });
 
   it("puts the folder on each card and notices its removal", async () => {
@@ -271,7 +306,7 @@ describe("creating trips safely", () => {
     expect(first.ok).toBe(true);
     expect(second.ok).toBe(false);
     expect(!second.ok && second.error).toContain("already exists");
-    expect(vault.paths()).toHaveLength(11);
+    expect(vault.paths()).toHaveLength(12);
   });
 
   it("reports a write failure as a result, not an exception", async () => {

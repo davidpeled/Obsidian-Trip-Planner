@@ -194,6 +194,25 @@ describe("TripsView", () => {
     });
   });
 
+  describe("agent guide", () => {
+    it("is offered on the trips that own their folder, labelled for screen readers", async () => {
+      const s = await setup([JAPAN]);
+      s.vault.addNote("Areas/Trips/Rome.md", "---\ntype: trip\nname: Rome\nstart: 2026-07-01\nend: 2026-07-02\n---\n");
+      await s.open();
+      const button = s.card("Japan 2026").querySelector(".trip-planner-agent-guide")!;
+      expect(button.getAttribute("aria-label")).toBe("Add agent guide to Japan 2026");
+      expect(s.card("Rome").querySelector(".trip-planner-agent-guide")).toBeNull();
+    });
+
+    it("tells the user when the trip already has one", async () => {
+      const s = await setup([JAPAN]);
+      await s.open();
+      click(s.card("Japan 2026").querySelector(".trip-planner-agent-guide")!);
+      await flush();
+      expect(Notice.messages).toEqual(["Japan 2026 already has an AGENTS.md."]);
+    });
+  });
+
   describe("deleting", () => {
     it("offers delete only on trips that own their folder", async () => {
       const s = await setup([JAPAN]);
@@ -222,7 +241,7 @@ describe("TripsView", () => {
       const modal = Modal.open[0];
       expect(text(modal.contentEl.querySelector(".trip-planner-warning strong"))).toBe("Warning: this will delete everything under Trips/Japan 2026");
       const files = s.vault.paths().filter((p) => p.startsWith("Trips/Japan 2026/")).length;
-      expect(files).toBe(18); // overview + 7 sections + 10 days
+      expect(files).toBe(19); // overview + 7 sections + 10 days + AGENTS.md
       expect(text(modal.contentEl.querySelector(".trip-planner-warning p"))).toContain(`All ${files} files inside it will be deleted`);
       expect(s.vault.paths()).toHaveLength(files); // nothing deleted yet
     });

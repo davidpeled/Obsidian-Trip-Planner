@@ -3,7 +3,7 @@ import type { Clock, WorkspaceGateway } from "../../domain/interfaces/ports";
 import { tripFolder } from "../../domain/model/trip-scaffold";
 import type { DashboardView } from "../contracts/dashboard";
 import type { SettingsService } from "../contracts/settings";
-import type { CreateTripResult, DeleteTripResult, TripService } from "../contracts/trip-service";
+import type { AddAgentGuideResult, CreateTripResult, DeleteTripResult, TripService } from "../contracts/trip-service";
 import { toDashboard } from "../mappers/dashboard.mapper";
 
 /** What the dashboard view and the "new trip" form talk to. No Obsidian types in or out. */
@@ -51,6 +51,13 @@ export class TripsController {
   async create(draft: TripDraft): Promise<CreateTripResult> {
     const result = await this.trips.create(draft);
     if (result.ok && this.settings.get().openOverviewAfterCreate) await this.open(result.overviewPath);
+    return result;
+  }
+
+  /** Adds the agent guide to a trip and, when the setting is on, opens it. */
+  async addAgentGuide(folder: string): Promise<AddAgentGuideResult> {
+    const result = await this.trips.addAgentGuide(folder);
+    if (result.ok && this.settings.get().openOverviewAfterCreate) await this.open(result.path);
     return result;
   }
 
