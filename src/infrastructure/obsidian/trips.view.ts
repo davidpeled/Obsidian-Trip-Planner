@@ -97,6 +97,9 @@ export class TripsView extends ItemView {
     const end = top.createDiv({ cls: "trip-planner-card-end" });
     end.createSpan({ cls: "trip-planner-badge", text: trip.badge });
     if (trip.deletable) {
+      const guide = end.createEl("button", { cls: "trip-planner-agent-guide", attr: { "aria-label": `Add agent guide to ${trip.name}` } });
+      setIcon(guide, "bot");
+      guide.addEventListener("click", () => void this.addAgentGuide(trip));
       const remove = end.createEl("button", { cls: "trip-planner-delete", attr: { "aria-label": `Delete ${trip.name}` } });
       setIcon(remove, "trash-2");
       remove.addEventListener("click", () => void this.confirmDelete(trip));
@@ -124,6 +127,11 @@ export class TripsView extends ItemView {
         button.createSpan({ text: day.label });
       }
     }
+  }
+
+  private async addAgentGuide(trip: TripCard): Promise<void> {
+    const result = await this.controller.addAgentGuide(trip.folder);
+    new Notice(result.ok ? `Added AGENTS.md to ${trip.name}` : result.error);
   }
 
   private async confirmDelete(trip: TripCard): Promise<void> {

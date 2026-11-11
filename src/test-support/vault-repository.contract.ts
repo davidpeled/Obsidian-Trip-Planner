@@ -44,7 +44,10 @@ export function describeVaultRepository(name: string, make: () => VaultHarness):
       expect(await repo.exists(plan.folder)).toBe(true);
       expect(files()).toEqual(plan.notes.map((n) => n.path).sort());
       expect(folders()).toEqual(expect.arrayContaining(["Areas", "Areas/Trips", plan.folder]));
-      expect((await repo.listTypedNotes(TRIP_NOTE_TYPES)).length).toBe(plan.notes.length);
+      // The scanner sees exactly the notes that have a `type`; the untyped ones (AGENTS.md) stay invisible.
+      const typed = plan.notes.filter((n) => /^---\ntype: /.test(n.content));
+      expect(typed.length).toBeLessThan(plan.notes.length);
+      expect((await repo.listTypedNotes(TRIP_NOTE_TYPES)).map((n) => n.path).sort()).toEqual(typed.map((n) => n.path).sort());
     });
 
     it("is all or nothing: a clashing note rolls back what the call created, and only that", async () => {

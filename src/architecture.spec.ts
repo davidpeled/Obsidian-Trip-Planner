@@ -20,6 +20,9 @@ const ALLOWED: Record<Layer, Layer[]> = {
   infrastructure: ["infrastructure", "application", "domain"],
   bootstrap: [...LAYERS],
 };
+/** Source without comments and string literals, so prose ("a document to sign") isn't mistaken for the DOM global. */
+const codeOnly = (code: string): string =>
+  code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, "").replace(/(["'`])(?:\\.|(?!\1)[^\\\n])*\1/g, '""');
 const DOM_GLOBALS = /\b(document|window|HTMLElement|requestAnimationFrame|getComputedStyle)\b/;
 
 function files(dir: string): string[] {
@@ -68,7 +71,7 @@ describe("architecture", () => {
   it("keeps domain and application free of the DOM", () => {
     const offenders = sources
       .filter((s) => s.layer === "domain" || s.layer === "application")
-      .filter((s) => DOM_GLOBALS.test(s.code.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, "")))
+      .filter((s) => DOM_GLOBALS.test(codeOnly(s.code)))
       .map((s) => s.rel);
     expect(offenders).toEqual([]);
   });

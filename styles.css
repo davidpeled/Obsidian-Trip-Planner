@@ -326,7 +326,8 @@
   gap: var(--size-2-2);
 }
 
-.trip-planner-delete {
+.trip-planner-delete,
+.trip-planner-agent-guide {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -344,31 +345,41 @@
     transform 160ms var(--trip-ease-out);
 }
 
-.trip-planner-delete svg {
+.trip-planner-delete svg,
+.trip-planner-agent-guide svg {
   width: var(--icon-s);
   height: var(--icon-s);
 }
 
-.trip-planner-delete:active {
+.trip-planner-delete:active,
+.trip-planner-agent-guide:active {
   transform: scale(0.95);
 }
 
-.trip-planner-delete:focus-visible {
+.trip-planner-delete:focus-visible,
+.trip-planner-agent-guide:focus-visible {
   opacity: 1;
 }
 
 @media (hover: hover) {
-  .trip-planner-delete {
+  .trip-planner-delete,
+  .trip-planner-agent-guide {
     opacity: 0;
   }
 
-  .trip-planner-card:hover .trip-planner-delete {
+  .trip-planner-card:hover .trip-planner-delete,
+  .trip-planner-card:hover .trip-planner-agent-guide {
     opacity: 1;
   }
 
   .trip-planner-delete:hover {
     background: color-mix(in srgb, var(--text-error) 14%, transparent);
     color: var(--text-error);
+  }
+
+  .trip-planner-agent-guide:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-accent);
   }
 }
 

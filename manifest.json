@@ -1,7 +1,7 @@
 {
   "id": "trip-planner",
   "name": "Trip Planner",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "minAppVersion": "1.7.2",
   "description": "Scaffold a folder per trip with flights, transportation and a note for every day, and jump to any trip from one dashboard.",
   "author": "David Peled",

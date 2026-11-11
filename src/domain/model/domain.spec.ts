@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { NOTE_TYPES, type VaultNote } from "../contracts/trip";
+import { NOTE_TYPES, SECTIONS, type VaultNote } from "../contracts/trip";
 import { addDays, daysBetween, eachDay, formatDay, formatRange, parseIsoDate, weekday } from "./dates";
 import { discoverTrips } from "./trip-discovery";
-import { cleanTripName, planTrip, validateDraft } from "./trip-scaffold";
+import { cleanTripName, planAgentGuide, planTrip, validateDraft } from "./trip-scaffold";
 
 describe("dates", () => {
   it("accepts only real calendar dates", () => {
@@ -80,7 +80,38 @@ describe("trip scaffold", () => {
       "Trips/Japan 2026/Schedule/2026-04-01 Wed.md",
       "Trips/Japan 2026/Schedule/2026-04-02 Thu.md",
       "Trips/Japan 2026/Schedule/2026-04-03 Fri.md",
+      "Trips/Japan 2026/AGENTS.md",
     ]);
+  });
+
+  it("writes an AGENTS.md with guardrails against reading attachments and sensitive files", () => {
+    const agents = planTrip(draft).notes.find((n) => n.path === "Trips/Japan 2026/AGENTS.md")!;
+    expect(agents.content).not.toMatch(/^---/);
+    expect(agents.content).toContain("Do not open PDFs");
+    expect(agents.content).toContain("explicitly allowed");
+    expect(agents.content).toContain("`Hotels/Index.md`");
+    expect(agents.content).toContain("`Flights.md`");
+  });
+
+  it("keeps the Documents guardrail from forbidding the Documents index it asks to fill", () => {
+    const { content } = planTrip(draft).notes.find((n) => n.path.endsWith("/AGENTS.md"))!;
+    expect(content).toContain("every file in `Documents/` except `Index.md`");
+    expect(content).toContain("You may fill in `Documents/Index.md` itself");
+  });
+
+  it("lists every section in the agent guide", () => {
+    const { content } = planTrip(draft).notes.find((n) => n.path.endsWith("/AGENTS.md"))!;
+    for (const section of SECTIONS) {
+      const own = planTrip(draft).notes.find((n) => n.content.includes(`type: ${NOTE_TYPES[section]}`))!;
+      expect(content, section).toContain(`\`${own.path.replace("Trips/Japan 2026/", "")}\``);
+    }
+  });
+
+  it("builds the same guide for an existing trip as for a new one", () => {
+    const created = planTrip(draft).notes.find((n) => n.path.endsWith("/AGENTS.md"))!;
+    const plan = planAgentGuide({ name: "Japan 2026", folder: "Trips/Japan 2026", start: draft.start, end: draft.end, days: [1, 2, 3].map((number) => ({ number, date: draft.start, path: "" })) });
+    expect(plan.folders).toEqual([]);
+    expect(plan.notes).toEqual([created]);
   });
 
   it("links the notes together with full paths", () => {
