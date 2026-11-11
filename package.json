@@ -1,6 +1,6 @@
 {
   "name": "obsidian-trip-planner",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "Obsidian plugin: create a structured folder per trip (flights, transportation, a note per day) and open any trip from a dashboard.",
   "main": "main.js",
   "scripts": {
