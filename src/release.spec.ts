@@ -16,6 +16,8 @@ let dir: string;
 beforeEach(() => {
   dir = mkdtempSync(path.join(tmpdir(), "trip-planner-release-"));
   FILES.forEach((f) => cpSync(path.join(REPO, f), path.join(dir, f)));
+  // The real manifest's version moves with every release; start each test from a fixed baseline.
+  setManifestVersion("0.1.0");
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
